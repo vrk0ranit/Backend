@@ -6,14 +6,14 @@ import {ApiResponse} from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 
 
-const generateAccessAndRefereshTokens = async(userId) => {
+const generateAccessAndRefreshTokens = async(userId) => {
    try{
       const user = await User.findById(userId)  
       const accessToken = user.generateAccessToken()
-      const refereshToken = user.generateRefreshToken() 
-      user.refereshToken = refereshToken
+      const  refreshToken= user.generateRefreshToken() 
+      user.refreshToken= refreshToken
       await user.save({validateBeforeSave: false})
-      return {accessToken, refereshToken}
+      return {accessToken,  refreshToken}
 
 
    } catch(error){
@@ -116,7 +116,7 @@ const registerUser = asyncHandler ( async (req, res) => {
       if(!isPasswordValid){
          throw new ApiError(401, "Invalid user credentials")
       }
-      const {accessToken,refereshToken} = await generateAccessAndRefereshTokens(user._id)
+      const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
 
      const loggedInUser = await User.findById(user._id).
      select("-password -refreshToken")
@@ -128,12 +128,12 @@ const registerUser = asyncHandler ( async (req, res) => {
      return res
      .status(200)
      .cookie("accessToken", accessToken, options)
-     .cookie("refereshToken", refereshToken, options)
+     .cookie("refreshToken", refreshToken, options)
      .json(
       new ApiResponse(
          200,
          {
-            user: loggedInUser,accessToken, refereshToken
+            user: loggedInUser,accessToken, refreshToken
          },
          "User logged  In successfully"
       )
@@ -146,7 +146,7 @@ const registerUser = asyncHandler ( async (req, res) => {
          req.user._id,
          {
             $unset: {
-              refreshToken: 1 //This removes the field from document
+               refreshToken: 1 //This removes the field from document
             }
          },
          {
@@ -162,14 +162,14 @@ const registerUser = asyncHandler ( async (req, res) => {
         return res
         .status(200)
         .clearCookie("accessToken", options)
-        .clearCookie("refereshToken", options)
+        .clearCookie("refreshToken", options)
         .json(new ApiResponse(200, {}, "User logged out successfully"))
       
     })
 
 
     const refereshAccessToken =asyncHandler(async(req,res) => {
-      const incomingRefreshToken = req.cookies.refereshToken || req.body.refereshToken
+      const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
       if(incomingRefreshToken) {
          throw new ApiError(401, "unauthorized request")
@@ -186,7 +186,7 @@ const registerUser = asyncHandler ( async (req, res) => {
             throw new ApiError(401, "Invalid refresh token")
          }
    
-         if(!incomingRefreshToken !== user?. refreshToken){
+         if(!incomingRefreshToken !== user?.refreshToken){
             throw new ApiError(401, "Refresh token is expired or used")
          }
            
@@ -194,7 +194,7 @@ const registerUser = asyncHandler ( async (req, res) => {
             httpOnly: true,
             secure: true
          }
-         const {accessToken, newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
+         const {accessToken, newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
    
          return res
          .status(200)
