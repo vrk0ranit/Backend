@@ -172,7 +172,7 @@ const registerUser = asyncHandler ( async (req, res) => {
     const refereshAccessToken =asyncHandler(async(req,res) => {
       const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-      if(incomingRefreshToken) {
+      if(!incomingRefreshToken) {
          throw new ApiError(401, "unauthorized request")
       }
 
@@ -219,7 +219,7 @@ const registerUser = asyncHandler ( async (req, res) => {
     const changeCurrentPassword = asyncHandler(async(req,res) => {
       const {oldPassword, newPassword} = req.body
 
-      const user = await User.findById(req.user?._idid)
+      const user = await User.findById(req.user?._id)
       const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
       if(!isPasswordCorrect){
